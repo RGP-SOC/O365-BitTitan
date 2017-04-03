@@ -116,6 +116,8 @@ END { } ./Script-Name.ps1 -SourceTenant &lt;Source&gt; -TargetTenant &lt;Target&
   - **oo** Enable remote PowerShell access for Office 365. Read the Knowledge Base article  [How do I enable remote PowerShell access for Office 365?](https://www.bittitan.com/kb/kb005174) for the steps to follow.
   - **oo** The method to remove a domain is to remove any vestige of that domain in the Source Tenant. The following example PowerShell script changes &quot;All&quot; UPNs for all users except the admin account replacing the domain name by the onmicrosoft.com addresses and redirects output to a file UPNChangeOutput.txt:
 
+
+```
 [cmdletbinding()]
 
 Param (
@@ -165,10 +167,13 @@ PROCESS {
 }
 
 END { }
+```
 
 Run the above:
 
+```
 ./Script-Name.ps1 -Tenant &lt;Tenant Name&gt; -VanityDomain &lt;Customers Email Domain&gt;
+```
 
 Remove any aliases that refer to domain
 
