@@ -42,13 +42,17 @@ Wait &gt;30 minutes for this to take effect
 |
 ## Prepare the Source Environment
 
-- **** Create an administrator account in Office 365 to be used for migration, or use the global admin account for the tenant.  [KB004948](https://www.bittitan.com/kb/kb004948)
-- **** Test mailbox access.  **Note:**  Test access to the tenantname.onmicrosoft.com addresses, not to the domainname.com addresses. Make sure that the tenantname.onmicrosoft.com account is attached to each mailbox in Office 365. By default it should be attached, but if not, it will need to be added as an alias to each account. This can be done through the Office 365 admin portal or via PowerShell scripts.  [KB004616](https://www.bittitan.com/kb/kb004616)
-- **** Export the user list to a CSV file. See example script below…requires Azure AD/Microsoft Online Powershell module:
-[cmdletbinding()]Param (    [Parameter(Mandatory=$true)]    [String]$SourceTenant,    [Parameter(Mandatory=$true)]    [String]$TargetTenant,    [Parameter(Mandatory=$true)]    [String[]]$VanityDomain,    [Int]$Flags = 0,    [PsCredential]$Credential)BEGIN {    Connect-MsolService -Credential $Credential}PROCESS {    foreach ($d in $VanityDomain) {        try {            foreach ($u in (Get-MsolUser -All | ? { $\_.IsLicensed } | ? { $\_.UserPrincipalName -like &quot;\*@$($d)&quot; }) ) {                $out = [ordered]@{}                $out.&#39;Source Email&#39; = $u.UserPrincipalName.Replace($d, $SourceTenant)                $out.&#39;Source Login Name&#39; = $null                $out.&#39;Source Password&#39; = $null                $out.&#39;Destination Email&#39; = $u.UserPrincipalName.Replace($d, $TargetTenant)                $out.&#39;Destination Login Name&#39; = $null                $out.&#39;Destination Password&#39; = $null                $out.&#39;Flags&#39; = $Flags                [PsCustomObject]$out            }        } catch {            Write-Error &quot;Problem with process...&quot;        }    }}
-END { } ./Script-Name.ps1 -SourceTenant &lt;Source&gt; -TargetTenant &lt;Target&gt; -VanityDomain &lt;Email Domain&gt;
-- **** This can be used when bulk-adding users to your MigrationWiz project later. You can copy and paste the user list into the Source Email column within your MigrationWiz project dashboard under  **Add**  &gt;  **Bulk Add**. Steps: From the Office 365 admin portal &gt;  **Users**  &gt;  **Active Users ** &gt;  **Export**  &gt; ** Continue****.**
-  - **oo**** Note: **Change the Source email addresses in the CSV file to point to the tenantname.onmicrosoft.com domain name. This will be used for migration rather than the vanity name. This is important because after the Pre-Stage migration pass, the vanity domain name from the Source must be removed. There will still be a Full (Delta) migration pass after domain removal, hence the reason for using the tenantname.onmicrosoft.com domain name.
+-  Create an administrator account in Office 365 to be used for migration, or use the global admin account for the tenant.  [KB004948](https://www.bittitan.com/kb/kb004948)
+-  Test mailbox access.  **Note:**  Test access to the tenantname.onmicrosoft.com addresses, not to the domainname.com addresses. Make sure that the tenantname.onmicrosoft.com account is attached to each mailbox in Office 365. By default it should be attached, but if not, it will need to be added as an alias to each account. This can be done through the Office 365 admin portal or via PowerShell scripts.  [KB004616](https://www.bittitan.com/kb/kb004616)
+-  Export the user list to a CSV file. See example script below…requires Azure AD/Microsoft Online Powershell module:
+
+
+
+./365_CSV.ps1.ps1 -SourceTenant &lt;Source&gt; -TargetTenant &lt;Target&gt; -VanityDomain &lt;Email Domain&gt;
+
+
+-  This can be used when bulk-adding users to your MigrationWiz project later. You can copy and paste the user list into the Source Email column within your MigrationWiz project dashboard under  **Add**  &gt;  **Bulk Add**. Steps: From the Office 365 admin portal &gt;  **Users**  &gt;  **Active Users ** &gt;  **Export**  &gt; ** Continue****.**
+  -  ** Note: **Change the Source email addresses in the CSV file to point to the tenantname.onmicrosoft.com domain name. This will be used for migration rather than the vanity name. This is important because after the Pre-Stage migration pass, the vanity domain name from the Source must be removed. There will still be a Full (Delta) migration pass after domain removal, hence the reason for using the tenantname.onmicrosoft.com domain name.
  |
 | --- |
 |
@@ -57,14 +61,14 @@ END { } ./Script-Name.ps1 -SourceTenant &lt;Source&gt; -TargetTenant &lt;Target&
 1. Create an administrator account in Office 365 to be used for migration, or use the global admin account for the tenant.  [KB004948](https://www.bittitan.com/kb/kb004948)
 2. Set up accounts on Office 365 and assign licenses. These can be created in several ways:
   1.
-    - **** Manually, one at a time.  [Microsoft instructions to add users individually](https://support.office.com/en-us/article/Add-users-individually-or-in-bulk-to-Office-365-Admin-Help-1970f7d6-03b5-442f-b385-5880b9c256ec?ui=en-US&amp;rs=en-US&amp;ad=US)
+    -   Manually, one at a time.  [Microsoft instructions to add users individually](https://support.office.com/en-us/article/Add-users-individually-or-in-bulk-to-Office-365-Admin-Help-1970f7d6-03b5-442f-b385-5880b9c256ec?ui=en-US&amp;rs=en-US&amp;ad=US)
 
 -
   1.
-    - **** By bulk import, via CSV file.  [Microsoft instructions to bulk add users](https://support.office.com/en-ca/article/Add-several-users-at-the-same-time-to-Office-365---Admin-Help-1f5767ed-e717-4f24-969c-6ea9d412ca88?ui=en-US&amp;rs=en-CA&amp;ad=CA)
-    - **** By PowerShell script.  [TechNet article](https://technet.microsoft.com/library/mt628067.aspx)
-    - **** By DirSync, AAD Sync or AAD connect.  [KB004336](http://www.bittitan.com/kb/kb004336)
-    - **** By BitTitan Sync tool.  [PDF](https://community.bittitan.com/kb/Documents/BitTitan%20Sync%20Program_v2.pdf#search=bittitan%20sync)
+    -   By bulk import, via CSV file.  [Microsoft instructions to bulk add users](https://support.office.com/en-ca/article/Add-several-users-at-the-same-time-to-Office-365---Admin-Help-1f5767ed-e717-4f24-969c-6ea9d412ca88?ui=en-US&amp;rs=en-CA&amp;ad=CA)
+    -   By PowerShell script.  [TechNet article](https://technet.microsoft.com/library/mt628067.aspx)
+    -   By DirSync, AAD Sync or AAD connect.  [KB004336](http://www.bittitan.com/kb/kb004336)
+    -   By BitTitan Sync tool.  [PDF](https://community.bittitan.com/kb/Documents/BitTitan%20Sync%20Program_v2.pdf#search=bittitan%20sync)
 - Test mailbox access.  **Note:**  Test access to the tenantname.onmicrosoft.com addresses, not to the domainname.com addresses. Make sure that the tenantname.onmicrosoft.com account is attached to each mailbox in Office 365. By default it should be attached, but if not, it will need to be added as an alias to each account. This can be done through the Office 365 admin portal or via PowerShell scripts.  [KB004616](https://www.bittitan.com/kb/kb004616)
 - Export user list to CSV file. This can be used when bulk-adding users to your MigrationWiz project later. You can copy and paste the user list into the Destination Email column within your MigrationWiz project dashboard under  **Add**  &gt;  **Bulk Add**. Steps: From Office 365 admin portal &gt;  **Users**  &gt;  **Active Users ** &gt;  **Export**  &gt; ** Continue****.**
   1. **Note: ** Change the Destination email addresses in the CSV file to point to the .onmicrosoft.com domain name (since this is the only domain name that initially exists on the Destination tenant; migrate to these tenantname.onmicrosoft.com domain names).
@@ -75,46 +79,46 @@ END { } ./Script-Name.ps1 -SourceTenant &lt;Source&gt; -TargetTenant &lt;Target&
 
 1. Create the customer.  [KB005421](https://community.bittitan.com/kb/Pages/How%20do%20I%20create%20a%20customer%20in%20MSPComplete.aspx)
 2. Create the Source and Destination endpoints.  [KB005427](https://www.bittitan.com/kb/kb005427)
-  - **oo** For the Source endpoint:
-    - **** Click on  **EndPoints**  &gt;  **Add Endpoint ** &gt; Enter endpoint name &gt; For endpoint type, select  **Office 365**.
-    - **** Click on the  **Provide Credentials ** radio button, and enter the admin account credentials.
-    - ****** Notes:**
-      - **** This should be a global admin account. If creating a separate admin account for the purpose of migration, refer to the Office 365 section in  [KB004725](https://www.bittitan.com/kb/kb004725).
-      - **** You should use the tenantname.onmicrosoft.com address, for the admin account domain name.
-  - **oo** For the Destination endpoint:
-    - **** Click on  **EndPoints**  &gt;  **Add Endpoint ** &gt; Enter endpoint name &gt; For endpoint type, select  **Office 365**.
-    - **** Click on the  **Provide Credentials ** radio button, and enter the admin account credentials.
-    - ****** Notes:**
-      - **** This should be a global admin account. If you are creating a separate admin account for the purpose of migration, refer to the Office 365 section in  [KB004725](https://www.bittitan.com/kb/kb004725).
-      - **** You should use the tenantname.onmicrosoft.com address for the admin account domain name.
+  -   For the Source endpoint:
+    -   Click on  **EndPoints**  &gt;  **Add Endpoint ** &gt; Enter endpoint name &gt; For endpoint type, select  **Office 365**.
+    -   Click on the  **Provide Credentials ** radio button, and enter the admin account credentials.
+    -  ** Notes:**
+      -   This should be a global admin account. If creating a separate admin account for the purpose of migration, refer to the Office 365 section in  [KB004725](https://www.bittitan.com/kb/kb004725).
+      -   You should use the tenantname.onmicrosoft.com address, for the admin account domain name.
+  -   For the Destination endpoint:
+    -   Click on  **EndPoints**  &gt;  **Add Endpoint ** &gt; Enter endpoint name &gt; For endpoint type, select  **Office 365**.
+    -   Click on the  **Provide Credentials ** radio button, and enter the admin account credentials.
+    -  ** Notes:**
+      -   This should be a global admin account. If you are creating a separate admin account for the purpose of migration, refer to the Office 365 section in  [KB004725](https://www.bittitan.com/kb/kb004725).
+      -   You should use the tenantname.onmicrosoft.com address for the admin account domain name.
 3. Purchase licenses. From your MSPComplete dashboard, click on  **Purchase**  &gt;  **Mailbox Migration ** &gt; select  **MigrationWiz-Mailbox ** and enter the number of licenses you wish to purchase.  **Note:**  Check to see if there are any available bundles for discounts (e.g., MigrationWiz-Mailbox and DeploymentPro Bundle).   [KB004647](https://www.bittitan.com/kb/kb004647)
   |
 
 
 
 1. Create the Mailbox Migration project.  [KB004380](https://www.bittitan.com/KB/KB004380)
-  - **oo** Create the Mailbox Migration project &gt; Select the customer &gt; Select the Source endpoint &gt; Select the Destination endpoint.
+  -   Create the Mailbox Migration project &gt; Select the customer &gt; Select the Source endpoint &gt; Select the Destination endpoint.
 2. Add the accounts (also referred to as &quot;items&quot;) that will be migrated to the project.  [KB004842](https://community.bittitan.com/kb/Pages/How%20do%20I%20add%20items%20to%20my%20migration%20project.aspx)
-  - **oo**** Notes:**
-    - **** You can add users via the  **Add**  &gt;  **Bulk Add ** You could then copy the user lists from your Source and Destination CSV files directly into the columns marked  **Source Email ** and  **Destination Email**.
-    - ****** It is important to use the tenantname.onmicrosoft.com addresses for both the Source and Destination usernames, rather than the vanity names.**
+  -  ** Notes:**
+    -   You can add users via the  **Add**  &gt;  **Bulk Add ** You could then copy the user lists from your Source and Destination CSV files directly into the columns marked  **Source Email ** and  **Destination Email**.
+    -  ** It is important to use the tenantname.onmicrosoft.com addresses for both the Source and Destination usernames, rather than the vanity names.**
 3. Set the Project Advanced Options.  [KB004834](https://community.bittitan.com/kb/Pages/What%20Project%20Advanced%20Options%20are%20available.aspx)
-  - **oo** The following options are most valuable for this migration scenario:
-    - **** Set to use impersonation at the Source. Checkmark the  **Use impersonation at Source ** box.  [KB004727](https://www.bittitan.com/kb/kb004727)
-    - **** Set to use impersonation at the Destination. Checkmark the  **Use impersonation at Destination ** box.  [KB004727](https://www.bittitan.com/kb/kb004727)
-    - **** If this is a large migration project, the value for  **Maximum concurrent migrations**** ​ **, under the ** Performance ** section, can be set to a very high value, e.g., 250. ** Note: **There is no limit for this value (for cloud to cloud migrations), if using impersonation.​
-    - **** Under  **Support/Support Options** , add the following:  **RecipientMapping=&quot;@sourcetenantname.onmicrosoft.com-&gt;@destinationdomainname.com&quot; ** [KB005150](https://www.bittitan.com/kb/kb005150)
-      - ****** Notes:**
-        - **** The RecipientMapping above is just an example; do not copy this verbatim. It needs to be changed to reflect the sourcetenantname.onmicrosoft.com account name and the customer Destination domain name.
-        - **** More than one remapping expression can be used.
-        - **** This is a very important step for Office 365 to Office 365 migrations. It ensures that emails have the ability to be replied to, even after the Full (Delta) migration has occurred, because they will be mapped to the new destination domain name, rather than using the old sourcetenantname.onmicrosoft.com account name (- which will no longer be available, once the tenant is retired).
+  -   The following options are most valuable for this migration scenario:
+    -   Set to use impersonation at the Source. Checkmark the  **Use impersonation at Source ** box.  [KB004727](https://www.bittitan.com/kb/kb004727)
+    -   Set to use impersonation at the Destination. Checkmark the  **Use impersonation at Destination ** box.  [KB004727](https://www.bittitan.com/kb/kb004727)
+    -   If this is a large migration project, the value for  **Maximum concurrent migrations**** ​ **, under the ** Performance ** section, can be set to a very high value, e.g., 250. ** Note: **There is no limit for this value (for cloud to cloud migrations), if using impersonation.​
+    -   Under  **Support/Support Options** , add the following:  **RecipientMapping=&quot;@sourcetenantname.onmicrosoft.com-&gt;@destinationdomainname.com&quot; ** [KB005150](https://www.bittitan.com/kb/kb005150)
+      -  ** Notes:**
+        -   The RecipientMapping above is just an example; do not copy this verbatim. It needs to be changed to reflect the sourcetenantname.onmicrosoft.com account name and the customer Destination domain name.
+        -   More than one remapping expression can be used.
+        -   This is a very important step for Office 365 to Office 365 migrations. It ensures that emails have the ability to be replied to, even after the Full (Delta) migration has occurred, because they will be mapped to the new destination domain name, rather than using the old sourcetenantname.onmicrosoft.com account name (- which will no longer be available, once the tenant is retired).
 4. Run Verify Credentials.  [KB004511](https://community.bittitan.com/kb/Pages/How%20do%20I%20verify%20credentials.aspx)
 5. Notify users that a migration is occurring. Send email to all users telling them the time and date of the migration.
 6. Pre-Stage pass: Select the users &gt; Click on the  **Start**  button from the top, and select  **Pre-Stage Migration ** &gt; Under the Migration Scheduling section, from the drop-down list, select  **90 days ago**  &gt; Click on  **Start Migration**.  [KB004938](https://community.bittitan.com/kb/Pages/How%20do%20I%20start%20a%20migration.aspx)
 7. Set MX record for domain to &quot;invalid.outlook.com&quot; – **No email delivered from this point onward**
 8. Remove Domain from Source.  **Note:**  This should only be done after the Pre-Stage migration pass has completed. Typically, it is done late on a Friday night.
-  - **oo** Enable remote PowerShell access for Office 365. Read the Knowledge Base article  [How do I enable remote PowerShell access for Office 365?](https://www.bittitan.com/kb/kb005174) for the steps to follow.
-  - **oo** The method to remove a domain is to remove any vestige of that domain in the Source Tenant. The following example PowerShell script changes &quot;All&quot; UPNs for all users except the admin account replacing the domain name by the onmicrosoft.com addresses and redirects output to a file UPNChangeOutput.txt:
+  -   Enable remote PowerShell access for Office 365. Read the Knowledge Base article  [How do I enable remote PowerShell access for Office 365?](https://www.bittitan.com/kb/kb005174) for the steps to follow.
+  -   The method to remove a domain is to remove any vestige of that domain in the Source Tenant. The following example PowerShell script changes &quot;All&quot; UPNs for all users except the admin account replacing the domain name by the onmicrosoft.com addresses and redirects output to a file UPNChangeOutput.txt:
 
 
 ```
@@ -179,6 +183,7 @@ Remove any aliases that refer to domain
 
 Removes the provided email aliases from the users to get ready to remove the domain from the source tenant:
 
+```
 [cmdletbinding(SupportsShouldProcess=$True)]
 
 Param (
@@ -251,30 +256,33 @@ END {
 
 }
 
-./Script-Name.ps1 -VanityDomain &lt;Customers Email Domain&gt;
+```
 
+```
+./Script-Name.ps1 -VanityDomain &lt;Customers Email Domain&gt;
+```
 **Notes:**
 
 1.
   -
-    - **** In the PowerShell script above, replace @Sourcedomain.onmicrosoft.com with @&quot;yourSourceTenantName&quot;.onmicrosoft.com, where &quot;yourSourceTenantName&quot; is the actual name of the tenant account. This is set when the tenant account was first created.
-    - **** If there are several domains in the Source tenant being moved to the new tenant, the PowerShell script above must be run for each of the domains.
-  - **oo** From the admin portal, change the UPN of the admin account to the onmicrosoft.com address.
-  - **oo** Once the script has been run, the domain can be removed. Remove the domain from the admin portal (go to: admin/Office365/Domains/Delete or via PowerShell). Read the Knowledge Base article  [How do I remove a domain from Office 365?](https://www.bittitan.com/kb/kb005173) for more information.
-  - **oo** When removing the domain, there may be a warning message: &quot;Remove domain....A problem was encountered while removing this domain&quot;. To resolve this, remove any other references to the old domain name: remove every contact, group, and reference to the Source domain on the tenant (including any email aliases containing the old domain name). Further advice on how to remove any other references to the old domain name and the PoweShell scripts to assist can be found in the Knowledge Base article  [How do I remove a domain from Office 365?](https://www.bittitan.com/kb/kb005173).
-  - **oo** If the domain still cannot be removed, contact Microsoft Support to assist with the domain removal.
-  - **oo**** Note:** After domain removal, users will not be able to access their email, unless they know and log in with their tenantname.onmicrosoft.com email addresses.
+    -   In the PowerShell script above, replace @Sourcedomain.onmicrosoft.com with @&quot;yourSourceTenantName&quot;.onmicrosoft.com, where &quot;yourSourceTenantName&quot; is the actual name of the tenant account. This is set when the tenant account was first created.
+    -   If there are several domains in the Source tenant being moved to the new tenant, the PowerShell script above must be run for each of the domains.
+  -   From the admin portal, change the UPN of the admin account to the onmicrosoft.com address.
+  -   Once the script has been run, the domain can be removed. Remove the domain from the admin portal (go to: admin/Office365/Domains/Delete or via PowerShell). Read the Knowledge Base article  [How do I remove a domain from Office 365?](https://www.bittitan.com/kb/kb005173) for more information.
+  -   When removing the domain, there may be a warning message: &quot;Remove domain....A problem was encountered while removing this domain&quot;. To resolve this, remove any other references to the old domain name: remove every contact, group, and reference to the Source domain on the tenant (including any email aliases containing the old domain name). Further advice on how to remove any other references to the old domain name and the PoweShell scripts to assist can be found in the Knowledge Base article  [How do I remove a domain from Office 365?](https://www.bittitan.com/kb/kb005173).
+  -   If the domain still cannot be removed, contact Microsoft Support to assist with the domain removal.
+  -  ** Note:** After domain removal, users will not be able to access their email, unless they know and log in with their tenantname.onmicrosoft.com email addresses.
 
 \*\*\*Now wait 30 minutes for domain removal replication to complete.\*\*\*
 2. Send email to the end users to let them know what to expect for their Outlook profile reconfiguration. If using DeploymentPro, refer to  [KB005799 ](https://www.bittitan.com/KB/KB005799)for some sample text and screen shots that can be included in this email.
 3. Verify Domain at Destination. These actions are performed from within the Tenant 2 (Destination) admin portal.
-  - **oo** Verify the domain in the Destination Office 365 account. We recommend use of the wizard in Office 365 for this, since once the domain is verified with the Text record, it offers to change all the users to the new Default Domain.  **Note:**  Since the domain was previously added to the account, all that needs to be done is to click the  **Verify**   If the domain is unable to be verified, and there is an error saying the domain already exists on another account, contact Microsoft Support at 1-866-291-7726 (US Toll-Free, other numbers are also available), and tell them that the domain needs to be manually deprovisioned from Forefront.
-  - **oo** Confirm that every user has the Destinationdomain.com domain name added to their mailbox. Add if necessary.
-  - **oo** The step above should have added the domain to every user. Click  [here](http://community.bittitan.com/kb/KB%20Attachments/add%20new%20domain.ps1) to download a PowerShell script to check for this and add the domain name. This is only necessary if the users do not have the new default domain added to their account.
+  -   Verify the domain in the Destination Office 365 account. We recommend use of the wizard in Office 365 for this, since once the domain is verified with the Text record, it offers to change all the users to the new Default Domain.  **Note:**  Since the domain was previously added to the account, all that needs to be done is to click the  **Verify**   If the domain is unable to be verified, and there is an error saying the domain already exists on another account, contact Microsoft Support at 1-866-291-7726 (US Toll-Free, other numbers are also available), and tell them that the domain needs to be manually deprovisioned from Forefront.
+  -   Confirm that every user has the Destinationdomain.com domain name added to their mailbox. Add if necessary.
+  -   The step above should have added the domain to every user. Click  [here](http://community.bittitan.com/kb/KB%20Attachments/add%20new%20domain.ps1) to download a PowerShell script to check for this and add the domain name. This is only necessary if the users do not have the new default domain added to their account.
 4. MX Record Cutover **. ** On the DNS provider&#39;s portal, change the primary MX record to reflect the DNS settings for the new Office 365 organization. DNS settings to change include: Autodiscover, MX and SPF records. Also remove the old settings for Tenant 1. These settings can be found in the Office 365 admin portal, by following these steps:
-  - **oo** Inside Office 365, click on  **Admin ** in the header.
-  - **oo** On the Admin page, click on  **Domains****  **in the left pane.
-  - **oo** Click on the  **domain name to be set up** , and then click on the  **DNS Settings tab**. This page lists the DNS records necessary to set in order to use the Office 365 services.
+  -   Inside Office 365, click on  **Admin ** in the header.
+  -   On the Admin page, click on  **Domains****  **in the left pane.
+  -   Click on the  **domain name to be set up** , and then click on the  **DNS Settings tab**. This page lists the DNS records necessary to set in order to use the Office 365 services.
 5. Update UPNs in On-premise AD to include new Domain
 6. Run Sync on Azure AD Connect:
 
