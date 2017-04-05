@@ -58,7 +58,7 @@ PROCESS {
                 if ($pscmdlet.ShouldProcess($Mailbox.UserPrincipalName, "Set-Mailbox")) {
                     try {
                         Write-Verbose "Setting EmailAddresses..."
-                        Set-Mailbox -Identity $Mailbox.UserPrincipalName -Emailaddresses $Addresses -EA Stop
+                        $Mailbox | Set-Mailbox -Emailaddresses $Addresses -EA Stop
                     } catch {
                         $ErrorMessage = $_.Exception.Message
                         Write-Error "Problem with Set; Error: $($ErrorMessage)"
@@ -91,7 +91,7 @@ PROCESS {
                 if ($pscmdlet.ShouldProcess($List.UserPrincipalName, "Set-DistributionList")) {
                     try {
                         Write-Verbose "Setting EmailAddresses..."
-                        Set-DistributionGroup -Identity $List.Name -Emailaddresses $Addresses
+                        $List | Set-DistributionGroup -Emailaddresses $Addresses -EA Stop
                     } catch {
                         $ErrorMessage = $_.Exception.Message
                         Write-Error "Problem with Set; Error: $($ErrorMessage)"
