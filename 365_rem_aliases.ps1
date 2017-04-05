@@ -21,10 +21,10 @@ BEGIN {
 PROCESS {
     foreach ($d in $VanityDomain) {
         Write-Verbose "Processing ""$($d)""..."
-        try {
+        #try {
             # Process mailboxes
         	foreach ($Mailbox in (Get-Mailbox -ResultSize Unlimited | ? { ($_.EmailAddresses -like "*@$($d)") })) {
-                Write-Verbose "Processing ""$(Mailbox.UserPrincipalName)""..."
+                Write-Verbose "Processing ""$($Mailbox.UserPrincipalName)""..."
                 $Addresses = $Mailbox.EmailAddresses
                 foreach ($Email in $Mailbox.EmailAddresses) {
                     Write-Verbose "Checking ""$Email""..."
@@ -54,7 +54,7 @@ PROCESS {
                 }
             }
             # Process distribution lists
-            foreach ($List in (Get-DistributionList -ResultSize Unlimited | ? { ($_.EmailAddresses -like "*@$($d)") })) {
+            foreach ($List in (Get-DistributionGroup -ResultSize Unlimited | ? { ($_.EmailAddresses -like "*@$($d)") })) {
                 Write-Verbose "Processing ""$($List.Name)""..."
                 $Addresses = $List.EmailAddresses
                 foreach ($Email in $List.EmailAddresses) {
@@ -77,24 +77,24 @@ PROCESS {
                 if ($pscmdlet.ShouldProcess($List.UserPrincipalName, "Set-DistributionList")) {
                     try {
                         Write-Verbose "Setting EmailAddresses..."
-                        Set-DistributionList -Identity $List.Name -Emailaddresses $Addresses
+                        Set-DistributionGroup -Identity $List.Name -Emailaddresses $Addresses
                     } catch {
                         $ErrorMessage = $_.Exception.Message
                         Write-Error "Problem with Set; Error: $($ErrorMessage)"
                     }
                 }
             }
-        } catch {
-            $ErrorMessage = $_.Exception.Message
-            $FailedItem = $_.Exception.ItemName
-            Write-Error "Problem with: $($FailedItem); Error: $($ErrorMessage)"
-        }
+        #}catch {
+        #    $ErrorMessage = $_.Exception.Message
+        #    $FailedItem = $_.Exception.ItemName
+        #    Write-Error "Problem with: $($FailedItem); Error: $($ErrorMessage)"
+        #}
     }
 }  
 END {
     # Remove PsSession if required
     if ($Session) {
-        Remove-PsSession $Session
+        #Remove-PsSession $Session
     }
 }
 

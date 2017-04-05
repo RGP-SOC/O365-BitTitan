@@ -12,7 +12,7 @@ List of accounts to exlcude from the change.
 .EXAMPLE
 ./Script-Name.ps1 -Credential (Get-Credential) -SourceDomain example.com -TargetDomain example.onmicrosoft.com 
 #>
-[cmdletbinding()]
+[cmdletbinding(SupportsShouldProcess=$True)]
 Param (
     [Parameter(Mandatory=$true)]
     [String[]]$SourceDomain,
@@ -29,7 +29,11 @@ PROCESS {
         try {
         	foreach ($user in (Get-MsolUser -All | ? { ($_.UserPrincipalName -like "*@$($d)") -and ($_.UserPrincipalName -ne $Exclude) })) {
                 $NewUserPrincipalName = $user.UserPrincipalName.Split("@")[0] + "@$($TargetDomain)"
-                Set-MsolUserPrincipalName -UserPrincipalName $user.UserPrincipalName -NewUserPrincipalName $NewUserPrincipalName
+                if ($pscmdlet.ShouldProcess($user.UserPrincipalName, "Set-MsolUserPrincipalName")) {
+                    Set-MsolUserPrincipalName -UserPrincipalName $user.UserPrincipalName -NewUserPrincipalName $NewUserPrincipalName
+                }
+                # Show some output
+                [PsCustomObject]@{
                     SourceUserPrincipalName = $user.UserPrincipalName;
                     TargetUserPrincipalName = $NewUserPrincipalName
                 }

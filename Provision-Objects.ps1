@@ -75,6 +75,8 @@ PROCESS {
                         TargetExists = $TargetExists;
                         TargetCreated = $TargetCreated
                     }
+                    # Return output to pipeline
+                    [PsCustomObject]$out
                 }
             } elseif ($Contacts) {
                 # Handle Contacts
@@ -108,6 +110,8 @@ PROCESS {
                         TargetExists = $TargetExists;
                         TargetCreated = $TargetCreated
                     }
+                    # Return output to pipeline
+                    [PsCustomObject]$out
                 }
             } elseif ($Mailboxes) {
                 # Handle mailboxes
@@ -156,13 +160,14 @@ PROCESS {
                         TargetExists = $TargetExists;
                         TargetCreated = $TargetCreated
                     }
+                    # Return output to pipeline
+                    [PsCustomObject]$out
                 }
             } else {
                 Write-Error "Specify one of ""-Mailboxes"", ""-Contacts"" or ""-DistributionLists"""
                 continue
             }
-            # Return output to pipeline
-            [PsCustomObject]$out
+
         } catch {
             $ErrorMessage = $_.Exception.Message
             $FailedItem = $_.Exception.ItemName
