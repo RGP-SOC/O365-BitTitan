@@ -12,11 +12,21 @@ The credentials to log onto the source tenant.
 Param (
     [Parameter(Mandatory=$true)]
     [String[]]$VanityDomain,
-    [PsCredential]$Credential
+    [PsCredential]$Credential,
+    [Switch]$SkipSessionCreate,
+    [Switch]$SkipSessionRemove
 )
 BEGIN {
-    $Session = New-PsSession -ConfigurationName Microsoft.Exchange -ConnectionUri https://outlook.office365.com/powershell-liveid/ -AllowRedirect -Authentication Basic -Credential $Credential -EA Stop
-    Import-PsSession -AllowClobber $Session -EA Stop | Out-Null
+    if ($SkipSessionCreate) {
+        try {
+            Get-AcceptedDomain -ErrorAction Stop | Out-Null
+        } catch {
+            Write-Error "SkipSessionCreate was specified but command failed..." -EA Stop
+        }
+    } else {
+        $Session = New-PsSession -ConfigurationName Microsoft.Exchange -ConnectionUri https://outlook.office365.com/powershell-liveid/ -AllowRedirect -Authentication Basic -Credential $Credential -EA Stop
+        Import-PsSession -AllowClobber $Session -EA Stop | Out-Null
+    }
 }
 PROCESS {
     foreach ($d in $VanityDomain) {
@@ -26,12 +36,14 @@ PROCESS {
         	foreach ($Mailbox in (Get-Mailbox -ResultSize Unlimited | ? { ($_.EmailAddresses -like "*@$($d)") })) {
                 Write-Verbose "Processing ""$($Mailbox.UserPrincipalName)""..."
                 $Addresses = $Mailbox.EmailAddresses
-                foreach ($Email in $Mailbox.EmailAddresses) {
+                for ($n=0; $n -lt $Addresses.Count; $n++) {
+                    $Email = $Addresses[$n]
                     Write-Verbose "Checking ""$Email""..."
-                    if ($Email -like "smtp:*@$($d)") {
-                        $Action = "Removed"
+                    if ($Email.IsPrimaryAddress -eq $false -and $Email.SmtpAddress -like "*@$($d)") {
                         Write-Verbose "Match found..."
-                        $Addresses.Remove($Email)
+                        $Action = "Removed"
+                        $Addresses.RemoveAt($n)
+                        $n--
                     } else {
                         $Action = "Skipped"
                     }
@@ -57,12 +69,14 @@ PROCESS {
             foreach ($List in (Get-DistributionGroup -ResultSize Unlimited | ? { ($_.EmailAddresses -like "*@$($d)") })) {
                 Write-Verbose "Processing ""$($List.Name)""..."
                 $Addresses = $List.EmailAddresses
-                foreach ($Email in $List.EmailAddresses) {
+                for ($n=0; $n -lt $Addresses.Count; $n++) {
+                    $Email = $Addresses[$n]
                     Write-Verbose "Checking ""$Email""..."
-                    if ($Email -like "smtp:*@$($d)") {
-                        $Action = "Removed"
+                    if ($Email.IsPrimaryAddress -eq $false -and $Email.SmtpAddress -like "*@$($d)") {
                         Write-Verbose "Match found..."
-                        $Addresses.Remove($Email)
+                        $Action = "Removed"
+                        $Addresses.RemoveAt($n)
+                        $n--
                     } else {
                         $Action = "Skipped"
                     }
@@ -93,8 +107,8 @@ PROCESS {
 }  
 END {
     # Remove PsSession if required
-    if ($Session) {
-        #Remove-PsSession $Session
+    if ($Session -and (-not $SkipSessionRemove)) {
+        Remove-PsSession $Session
     }
 }
 
