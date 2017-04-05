@@ -18,7 +18,7 @@ Sets the script to replicate distribution lists instead.
 .EXAMPLE
 ./Provision-Objects.ps1 -Credential (Get-Credential) -SourceTenant sourcecompany.onmicrosoft.com -TargetTenant targettenant.onmicrosoft.com 
 #>
-[cmdletbinding(SupportsShouldProcess=$True)]
+[cmdletbinding(SupportsShouldProcess=$True,DefaultParameterSetName="Mailboxes")]
 Param (
     [Parameter(Mandatory=$true)]
     [String]$SourceTenant,
@@ -28,10 +28,14 @@ Param (
     [PsCredential]$SourceCredential,
     [PsCredential]$TargetCredential,
     [Parameter(ParameterSetName='Mailboxes')]
+    [Switch]$Mailboxes,
+    [Parameter(ParameterSetName='Mailboxes')]
     [ValidateSet("SharedMailbox", "EquipmentMailbox", "RoomMailbox", "Contact")]
-    [String[]]$RecipientTypeDetails = @("SharedMailbox", "EquipmentMailbox", "RoomMailbox", "Contact"),
+    [String[]]$RecipientTypeDetails = @("SharedMailbox", "EquipmentMailbox", "RoomMailbox"),
     [Parameter(ParameterSetName='Groups')]
-    [Switch]$DistributionLists
+    [Switch]$DistributionLists,
+    [Parameter(ParameterSetName='Contacts')]
+    [Switch]$Contacts
 )
 BEGIN {
     $SourceSession = New-PsSession -ConfigurationName Microsoft.Exchange -ConnectionUri https://outlook.office365.com/powershell-liveid/ -AllowRedirect -Authentication Basic -Credential $SourceCredential -EA Stop
@@ -65,14 +69,47 @@ PROCESS {
                     }
                     $out = @{
                         Alias = $SourceList.Alias;
-                        SourcePrimarySmtpAddress = $SourceMailbox.UserPrincipalName.Replace("@$($d)", "@$($SourceTenant)");
-                        TargetUserPrincipalName = $TargetMailbox.UserPrincipalName;
-                        RecipientTypeDetails = $SourceMailbox.RecipientTypeDetails;
+                        SourcePrimarySmtpAddress = $SourceList.UserPrincipalName.Replace("@$($d)", "@$($SourceTenant)");
+                        TargetUserPrincipalName = $TargetList.UserPrincipalName;
+                        RecipientTypeDetails = $SourceList.RecipientTypeDetails;
                         TargetExists = $TargetExists;
                         TargetCreated = $TargetCreated
                     }
                 }
-            } else {
+            } elseif ($Contacts) {
+                # Handle Contacts
+                foreach ($SourceContact in (Get-SourceContact -ResultSize Unlimited)) {
+                    $TargetContact = (Get-TargetContact -Identity $SourceContact.Name -EA SilentlyContinue)
+                    if ($TargetContact) {
+                        $TargetExists = $true
+                    } else {
+                        $TargetExists = $false
+                        if ($pscmdlet.ShouldProcess($SourceContact.Name, "New-MailContact")) {
+                            $NewTargetContact = @{
+                                Name = $SourceContact.Name;
+                                DisplayName = $SourceContact.DisplayName;
+                                FirstName = $SourceContact.FirstName;
+                                LastName = $SourceContact.LastName;
+                                Initials = $SourceContact.Initials;
+                                ExternalEmailAddress = $SourceContact.WindowsEmailAddress
+
+                            }
+                            $TargetContact = New-TargetMailContact @NewTargetContact -EA Continue
+                            if ($TargetContact) {
+                                $TargetCreated = $true
+                            } else {
+                                $TargetCreated = $false
+                            }
+                        }
+                    }
+                    $out = @{
+                        Name = $SourceContact.Name;
+                        ExternalEmailAddress = $SourceContact.WindowsEmailAddress;
+                        TargetExists = $TargetExists;
+                        TargetCreated = $TargetCreated
+                    }
+                }
+            } elseif ($Mailboxes) {
                 # Handle mailboxes
                 foreach ($SourceMailbox in (Get-SourceMailbox -ResultSize Unlimited | ? { ($RecipientTypeDetails -contains $_.RecipientTypeDetails) -and ($_.UserPrincipalName -like "*@$($d)") } )) {
                     $TargetMailbox = (Get-TargetMailbox -RecipientTypeDetails $SourceMailbox.RecipientTypeDetails -Identity $SourceMailbox.UserPrincipalName.Replace("@$($d)", "@$($TargetTenant)") -EA SilentlyContinue)
@@ -120,6 +157,9 @@ PROCESS {
                         TargetCreated = $TargetCreated
                     }
                 }
+            } else {
+                Write-Error "Specify one of ""-Mailboxes"", ""-Contacts"" or ""-DistributionLists"""
+                continue
             }
             # Return output to pipeline
             [PsCustomObject]$out
