@@ -14,3 +14,6 @@ Get-ADUser -SearchBase $ou -filter * | ForEach-Object {
 $newUpn = $_.UserPrincipalName.Replace($oldSuffix,$newSuffix)
 $_ | Set-ADUser -server $server -UserPrincipalName $newUpn
 }
+
+#Sync with Azure
+Start-ADSyncSyncCycle -PolicyType Delta
